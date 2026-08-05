@@ -1,27 +1,28 @@
 #!/bin/bash
-# 🏥 Prashanth Hospital Master Data Governance & Sanitization Platform
-# Automated One-Click Deployment Script
+# 🏥 Prashanth Hospital Master File Analyzer
+# Automated Deployment Script
 
 echo "=========================================================================="
-echo "🏥 Deploying Prashanth Hospital Master Data Governance Platform"
+echo "🏥 Deploying Prashanth Hospital Master File Analyzer Platform"
 echo "=========================================================================="
 
-# 1. Install Backend Dependencies & Start Server
-echo "📦 Installing Backend Dependencies..."
-cd backend
-npm install --production
-cd ..
+# 1. Install Python Backend Dependencies
+echo "📦 Installing Python Backend Dependencies..."
+python3 -m pip install fastapi uvicorn pandas polars openpyxl xlsxwriter rapidfuzz python-multipart --break-system-packages
 
-# 2. Install Frontend Dependencies & Build Production Bundle
+# 2. Install Frontend Dependencies & Build Assets
 echo "🎨 Installing Frontend Dependencies & Building Assets..."
 cd frontend
 npm install
 npm run build
 cd ..
 
-# 3. Start Application with PM2
-echo "🚀 Launching Services with PM2..."
-pm2 start backend/src/server.js --name mdg-backend
+# 3. Start Application Services with PM2
+echo "🚀 Launching Master File Analyzer Services..."
+pm2 stop mdg-backend mdg-frontend 2>/dev/null || true
+pm2 delete mdg-backend mdg-frontend 2>/dev/null || true
+
+pm2 start "python3 main.py" --cwd backend --name mdg-backend
 pm2 start "npm run preview -- --host 0.0.0.0 --port 3001" --cwd frontend --name mdg-frontend
 pm2 save
 
