@@ -250,62 +250,63 @@ def generate_excel_workbook(
         ws.row_dimensions[3].height = 28
         row_counter = 4
         
+        # If issues_subset is empty for this category, display 1 clean green compliance summary row
         if not issues_subset:
-            for row_idx in range(len(df)):
-                row_data = df.iloc[row_idx]
-                for col_idx, c_name in enumerate(orig_cols, start=1):
-                    val = row_data.get(c_name, "")
-                    c = ws.cell(row=row_counter, column=col_idx, value=str(val))
-                    c.font = regular_font
-                    c.border = thin_border
-                    
-                no_issue_vals = [
-                    "Clean / Compliant",
-                    "ALL_FIELDS",
-                    "",
-                    "No change required — 100% compliant in this check category.",
-                    "",
-                    "Low",
-                    master_type,
-                    "No Change Required",
-                    "System Validator",
-                    "Passes Validation",
-                    ""
-                ]
+            for col_idx in range(1, len(orig_cols) + 1):
+                c = ws.cell(row=4, column=col_idx, value="N/A")
+                c.font = regular_font
+                c.border = thin_border
                 
-                for g_offset, g_val in enumerate(no_issue_vals):
-                    c_col = len(orig_cols) + 1 + g_offset
-                    c = ws.cell(row=row_counter, column=c_col, value=g_val)
-                    c.font = regular_font
-                    c.border = thin_border
-                    if g_offset == 7:
-                        c.fill = green_fill
-                        c.font = green_font
-                        dv_status.add(c)
-                row_counter += 1
+            no_issue_vals = [
+                "Clean / Compliant",
+                "ALL_FIELDS",
+                "Compliant",
+                "No action required — 100% compliant in this check category.",
+                "",
+                "Low",
+                master_type,
+                "No Change Required",
+                "System Validator",
+                "Passes Validation",
+                "Zero issues detected in this category"
+            ]
+            
+            for g_offset, g_val in enumerate(no_issue_vals):
+                c_col = len(orig_cols) + 1 + g_offset
+                c = ws.cell(row=4, column=c_col, value=g_val)
+                c.font = regular_font
+                c.border = thin_border
+                if g_offset == 7: # Correction Status
+                    c.fill = green_fill
+                    c.font = green_font
+                    dv_status.add(c)
+            row_counter = 5
         else:
+            # Build Data Rows for Issues Found in this specific category
             for issue in issues_subset:
                 orig_row_idx = issue['row_index'] - 1
                 row_data = df.iloc[orig_row_idx] if orig_row_idx < len(df) else {}
                 
+                # 1. Fill Original Source Columns for this affected row
                 for col_idx, c_name in enumerate(orig_cols, start=1):
                     val = row_data.get(c_name, "") if isinstance(row_data, pd.Series) else ""
                     c = ws.cell(row=row_counter, column=col_idx, value=str(val))
                     c.font = regular_font
                     c.border = thin_border
                     
+                # 2. Fill Governance Added Columns
                 gov_vals = [
                     issue['issue_type'],
                     issue['field_name'],
                     issue['original_value'],
                     issue['suggested_correction'],
-                    "",
+                    "", # Corrected Value
                     issue['priority'],
                     issue['responsible_dept'],
-                    "Pending",
-                    "",
-                    "",
-                    ""
+                    "Pending", # Default Correction Status
+                    "", # Corrected By
+                    "", # Correction Reason
+                    ""  # Remarks
                 ]
                 
                 for g_offset, g_val in enumerate(gov_vals):
