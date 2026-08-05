@@ -15,7 +15,7 @@ r_health = requests.get(f"{BASE_URL}/api/health")
 assert r_health.status_code == 200, f"Health check failed: {r_health.text}"
 print("✅ Health Check Passed:", r_health.json())
 
-# 2. Test Frontend Server Content
+# 2. Test Frontend Server Assets on Port 3001...
 print("\n2. Testing Frontend Server Assets on Port 3001...")
 r_html = requests.get(FRONTEND_URL)
 assert r_html.status_code == 200, f"Frontend check failed: {r_html.status_code}"
@@ -67,8 +67,8 @@ assert r_excel.status_code == 200, f"Excel download failed: {r_excel.status_code
 
 wb = openpyxl.load_workbook(io.BytesIO(r_excel.content))
 expected_sheets = [
-    'Executive Summary', 'All Issues', 'Affected Records', 'Duplicate Records',
-    'Missing Fields', 'Invalid Values', 'Spelling and Standardisation',
+    'Executive Summary', 'Original Master Data', 'All Issues', 'Affected Records',
+    'Duplicate Records', 'Missing Fields', 'Invalid Values', 'Spelling and Standardisation',
     'Department-Specific Review', 'Correction Priorities', 'Sanitization Rules'
 ]
 
@@ -79,6 +79,12 @@ assert wb.sheetnames == expected_sheets, f"Sheets mismatch: {wb.sheetnames}"
 ws_exec = wb['Executive Summary']
 exec_title = ws_exec.cell(row=1, column=1).value
 assert "Kranium HIS Master Sanitization — Executive Summary" in exec_title
+
+# Check Sheet 2: Original Master Data row count
+ws_orig = wb['Original Master Data']
+assert ws_orig.cell(row=4, column=1).value == "STR-10001"
+assert ws_orig.cell(row=7, column=1).value == "STR-10003"
+print("✅ Original Master Data Sheet Data Verification Passed!")
 
 # Check sheet hyperlink back link in All Issues sheet
 ws_issues = wb['All Issues']

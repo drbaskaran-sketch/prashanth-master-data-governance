@@ -132,7 +132,8 @@ def generate_excel_workbook(
     # Quick Jump Sheet Links
     ws_exec.cell(row=27, column=1, value="Quick Sheet Navigation Links").font = section_font
     nav_links = [
-        ("View Affected Records", "'Affected Records'!A1", "Go to 100% list of unique records requiring sanitization"),
+        ("View Original Master Data", "'Original Master Data'!A1", "Go to 100% complete raw uploaded source dataset"),
+        ("View Affected Records", "'Affected Records'!A1", "Go to list of unique records requiring sanitization"),
         ("View Duplicate Records", "'Duplicate Records'!A1", "Go to duplicate key and repeated row findings"),
         ("View Missing Fields", "'Missing Fields'!A1", "Go to missing mandatory values sheet"),
         ("View Invalid Values", "'Invalid Values'!A1", "Go to invalid status and formatting errors"),
@@ -159,14 +160,14 @@ def generate_excel_workbook(
         c3.border = thin_border
 
     # Correction Priorities Table
-    ws_exec.cell(row=37, column=1, value="Correction Priorities & Workstream Roadmap").font = section_font
+    ws_exec.cell(row=38, column=1, value="Correction Priorities & Workstream Roadmap").font = section_font
     prio_headers = ["Order", "Workstream", "Evidence", "Priority", "Required Action", "Responsible Department"]
     for c_idx, h in enumerate(prio_headers, start=1):
-        c = ws_exec.cell(row=38, column=c_idx, value=h)
+        c = ws_exec.cell(row=39, column=c_idx, value=h)
         c.font = header_font
         c.fill = navy_header_fill
         
-    for r_idx, item in enumerate(analysis_results['priorities_list'], start=39):
+    for r_idx, item in enumerate(analysis_results['priorities_list'], start=40):
         c1 = ws_exec.cell(row=r_idx, column=1, value=item['order'])
         c2 = ws_exec.cell(row=r_idx, column=2, value=item['workstream'])
         c3 = ws_exec.cell(row=r_idx, column=3, value=item['evidence'])
@@ -187,7 +188,39 @@ def generate_excel_workbook(
             c4.font = amber_font
 
     # -------------------------------------------------------------
-    # CORRECTION SHEETS (2 TO 10)
+    # SHEET 2: ORIGINAL MASTER DATA (100% Raw Uploaded Source Data)
+    # -------------------------------------------------------------
+    ws_orig = wb.create_sheet(title="Original Master Data")
+    ws_orig.views.sheetView[0].showGridLines = True
+    ws_orig.cell(row=1, column=1, value='=HYPERLINK("#\'Executive Summary\'!A1", "<- Back to Executive Summary")').font = link_font
+    
+    orig_cols = list(df.columns)
+    orig_headers = orig_cols + ["Data Audit Status"]
+    
+    for c_idx, h in enumerate(orig_headers, start=1):
+        c = ws_orig.cell(row=3, column=c_idx, value=h)
+        c.font = header_font
+        c.fill = navy_header_fill if c_idx <= len(orig_cols) else teal_header_fill
+        c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws_orig.row_dimensions[3].height = 28
+    
+    for r_idx in range(len(df)):
+        row_data = df.iloc[r_idx]
+        for c_idx, c_name in enumerate(orig_cols, start=1):
+            c = ws_orig.cell(row=r_idx+4, column=c_idx, value=str(row_data.get(c_name, "")))
+            c.font = regular_font
+            c.border = thin_border
+        # Audit status column
+        c_st = ws_orig.cell(row=r_idx+4, column=len(orig_cols)+1, value="Original Source Data")
+        c_st.font = regular_font
+        c_st.fill = slate_fill
+        c_st.border = thin_border
+        
+    ws_orig.freeze_panes = 'A4'
+    ws_orig.auto_filter.ref = f"A3:{get_column_letter(len(orig_headers))}{len(df)+3}"
+
+    # -------------------------------------------------------------
+    # CORRECTION SHEETS (3 TO 9)
     # -------------------------------------------------------------
     governance_headers = [
         "Issue Type", "Field Name", "Original Value", "Suggested Correction/Action",
@@ -195,18 +228,16 @@ def generate_excel_workbook(
         "Corrected By", "Correction Reason", "Remarks"
     ]
     
-    orig_cols = list(df.columns)
     all_headers = orig_cols + governance_headers
     
     # Data Validation Dropdown for Correction Status
     dv_status = DataValidation(type="list", formula1='"Pending,Corrected,No Change Required,Needs Clarification"', allow_blank=True)
     
-    # Affected Records includes ALL issues across all categories
     all_issues_list = analysis_results['all_issues']
     
     sheet_definitions = [
         ("All Issues", all_issues_list),
-        ("Affected Records", all_issues_list), # Full list of all affected record issues
+        ("Affected Records", all_issues_list),
         ("Duplicate Records", [i for i in all_issues_list if i['category'] == 'Duplicate Records']),
         ("Missing Fields", [i for i in all_issues_list if i['category'] == 'Missing Fields']),
         ("Invalid Values", [i for i in all_issues_list if i['category'] == 'Invalid Values']),
@@ -234,40 +265,44 @@ def generate_excel_workbook(
         
         row_counter = 4
         
-        # If issues_subset is empty, add an explicit "No Issues Found" row so sheet is never confusingly blank
+        # IF NO ISSUES FOUND FOR THIS CATEGORY: Populate ALL original source rows with "No Change Required"
         if not issues_subset:
-            # Source columns blank/N/A
-            for col_idx in range(1, len(orig_cols) + 1):
-                c = ws.cell(row=4, column=col_idx, value="N/A")
-                c.font = regular_font
-                c.border = thin_border
+            for row_idx in range(len(df)):
+                row_data = df.iloc[row_idx]
+                # 1. Fill Original Source Columns
+                for col_idx, c_name in enumerate(orig_cols, start=1):
+                    val = row_data.get(c_name, "")
+                    c = ws.cell(row=row_counter, column=col_idx, value=str(val))
+                    c.font = regular_font
+                    c.border = thin_border
+                    
+                # 2. Fill Governance Columns
+                no_issue_vals = [
+                    "Clean / Compliant",
+                    "ALL_FIELDS",
+                    "",
+                    "No change required — 100% compliant in this check category.",
+                    "", # Corrected Value
+                    "Low",
+                    master_type,
+                    "No Change Required",
+                    "System Validator",
+                    "Passes Validation",
+                    ""
+                ]
                 
-            no_issue_vals = [
-                "No Issues Found",
-                "ALL_FIELDS",
-                "Compliant",
-                "No action required - 100% compliant in this check category.",
-                "", # Corrected Value
-                "Low",
-                master_type,
-                "No Change Required",
-                "System Validator",
-                "Verified Clean",
-                "All records pass validation for this check"
-            ]
-            
-            for g_offset, g_val in enumerate(no_issue_vals):
-                c_col = len(orig_cols) + 1 + g_offset
-                c = ws.cell(row=4, column=c_col, value=g_val)
-                c.font = regular_font
-                c.border = thin_border
-                if g_offset == 7: # Status
-                    c.fill = green_fill
-                    c.font = green_font
-                    dv_status.add(c)
-            row_counter = 5
+                for g_offset, g_val in enumerate(no_issue_vals):
+                    c_col = len(orig_cols) + 1 + g_offset
+                    c = ws.cell(row=row_counter, column=c_col, value=g_val)
+                    c.font = regular_font
+                    c.border = thin_border
+                    if g_offset == 7: # Status column
+                        c.fill = green_fill
+                        c.font = green_font
+                        dv_status.add(c)
+                row_counter += 1
         else:
-            # Build Data Rows
+            # Build Data Rows for Issues Found
             for issue in issues_subset:
                 orig_row_idx = issue['row_index'] - 1
                 row_data = df.iloc[orig_row_idx] if orig_row_idx < len(df) else {}
@@ -325,7 +360,7 @@ def generate_excel_workbook(
         ws.auto_filter.ref = f"A3:{get_column_letter(len(all_headers))}{row_counter-1}"
 
     # -------------------------------------------------------------
-    # SHEET 9: CORRECTION PRIORITIES
+    # SHEET 10: CORRECTION PRIORITIES
     # -------------------------------------------------------------
     ws_cp = wb.create_sheet(title="Correction Priorities")
     ws_cp.views.sheetView[0].showGridLines = True
@@ -360,7 +395,7 @@ def generate_excel_workbook(
     ws_cp.freeze_panes = 'A4'
 
     # -------------------------------------------------------------
-    # SHEET 10: SANITIZATION RULES
+    # SHEET 11: SANITIZATION RULES
     # -------------------------------------------------------------
     ws_rules = wb.create_sheet(title="Sanitization Rules")
     ws_rules.views.sheetView[0].showGridLines = True
