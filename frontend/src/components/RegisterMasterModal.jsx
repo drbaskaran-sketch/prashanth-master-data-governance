@@ -58,32 +58,32 @@ export default function RegisterMasterModal({ isOpen, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl">
         
         {/* Header */}
-        <div className="bg-slate-800/80 border-b border-slate-700/80 px-6 py-4 flex items-center justify-between">
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="text-teal-400" size={20} />
-            <h2 className="text-base font-bold text-white tracking-tight">
+            <ShieldCheck className="text-teal-600" size={20} />
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">
               Register New Hospital Master (Zero-Code Metadata Configuration)
             </h2>
           </div>
-          <button onClick={onClose} className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800">
+          <button onClick={onClose} className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100">
             <X size={20} />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           {message && (
-            <div className="p-3 bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs rounded-xl font-medium">
+            <div className="p-3 bg-teal-50 border border-teal-200 text-teal-800 text-xs rounded-xl font-medium">
               {message}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
               Master Identifier (ID)
             </label>
             <input
@@ -92,12 +92,12 @@ export default function RegisterMasterModal({ isOpen, onClose }) {
               placeholder="e.g. NURSING_CARE_MASTER"
               value={form.masterId}
               onChange={e => setForm({ ...form, masterId: e.target.value })}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-teal-500"
+              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-teal-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
               Master Name
             </label>
             <input
@@ -106,19 +106,19 @@ export default function RegisterMasterModal({ isOpen, onClose }) {
               placeholder="e.g. Nursing Care & Clinical Service Master"
               value={form.masterName}
               onChange={e => setForm({ ...form, masterName: e.target.value })}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none focus:border-teal-500"
+              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-teal-600"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 Domain
               </label>
               <select
                 value={form.domain}
                 onChange={e => setForm({ ...form, domain: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none focus:border-teal-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-teal-600"
               >
                 <option value="CLINICAL_STAFF">Clinical Staff</option>
                 <option value="CLINICAL_OPERATIONS">Clinical Operations</option>
@@ -135,7 +135,7 @@ export default function RegisterMasterModal({ isOpen, onClose }) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                 Primary Key Field
               </label>
               <input
@@ -144,47 +144,47 @@ export default function RegisterMasterModal({ isOpen, onClose }) {
                 placeholder="e.g. care_code"
                 value={form.primaryKey}
                 onChange={e => setForm({ ...form, primaryKey: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-amber-300 font-mono focus:outline-none focus:border-teal-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-amber-800 font-mono focus:outline-none focus:border-teal-600"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
               Required Fields (comma separated)
             </label>
             <input
               type="text"
               value={form.requiredFieldsStr}
               onChange={e => setForm({ ...form, requiredFieldsStr: e.target.value })}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-teal-500"
+              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-teal-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
               Field Types Definition (field:TYPE, field:TYPE)
             </label>
             <input
               type="text"
               value={form.fieldTypesStr}
               onChange={e => setForm({ ...form, fieldTypesStr: e.target.value })}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-teal-300 font-mono focus:outline-none focus:border-teal-500"
+              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-teal-800 font-mono focus:outline-none focus:border-teal-600"
             />
           </div>
 
-          <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] text-slate-600">
             💡 This will instantly register the master in the <b>Master Registry Engine</b>. You will be able to upload, sanitize, validate, and export data for this master without writing code.
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-900">
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-xs font-extrabold text-white bg-teal-600 hover:bg-teal-500 rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              className="px-5 py-2 text-xs font-extrabold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md transition-all flex items-center gap-1.5"
             >
               <Plus size={16} />
               <span>Register Master Definition</span>

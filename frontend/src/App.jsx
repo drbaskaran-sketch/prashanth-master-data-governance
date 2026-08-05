@@ -26,14 +26,14 @@ function DashboardContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       <NavigationHeader
         onOpenUploadModal={() => setIsUploadOpen(true)}
         onOpenRegisterModal={() => setIsRegisterOpen(true)}
       />
 
       {/* Navigation Sub-Tab Bar */}
-      <div className="bg-slate-900/90 border-b border-slate-800 px-6 pt-2 sticky top-[57px] z-30 backdrop-blur-md">
+      <div className="bg-white/90 border-b border-slate-200 px-6 pt-2 sticky top-[57px] z-30 backdrop-blur-md shadow-xs">
         <div className="max-w-[1720px] mx-auto flex gap-2 overflow-x-auto">
           {tabs.map(t => {
             const IconComp = t.icon;
@@ -44,8 +44,8 @@ function DashboardContent() {
                 onClick={() => setActiveTab(t.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                   isSelected
-                    ? 'border-teal-400 text-teal-300 bg-slate-800/80 rounded-t-xl shadow-inner'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'border-teal-600 text-teal-700 bg-teal-50/80 rounded-t-xl shadow-xs'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
                 }`}
               >
                 <IconComp size={15} />
@@ -58,7 +58,7 @@ function DashboardContent() {
 
       {/* Main Content Area */}
       <main className="max-w-[1720px] w-full mx-auto px-6 py-6 flex-1">
-        {activeTab === 'CORRECTION_GRID' && <CorrectionDashboardPage />}
+        {activeTab === 'CORRECTION_GRID' && <CorrectionDashboardPage onOpenUploadModal={() => setIsUploadOpen(true)} />}
         {activeTab === 'MASTER_REGISTRY' && <MasterRegistryPage onOpenRegisterModal={() => setIsRegisterOpen(true)} />}
         {activeTab === 'DOMAIN_WORKSPACES' && <DomainWorkspacesPage />}
         {activeTab === 'APPROVAL_ROUTING' && <ApprovalRoutingPage />}
