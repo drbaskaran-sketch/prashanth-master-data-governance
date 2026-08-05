@@ -115,19 +115,16 @@ export default function App() {
       formData.append('department', department);
       formData.append('master_type', masterType);
 
-      // Simulated step 2
       setTimeout(() => {
         setProgressStep(2);
         setProgressText('Evaluating universal quality & duplicate detection rules...');
       }, 600);
 
-      // Simulated step 3
       setTimeout(() => {
         setProgressStep(3);
         setProgressText('Applying department-specific validation rule packs...');
       }, 1200);
 
-      // Simulated step 4
       setTimeout(() => {
         setProgressStep(4);
         setProgressText('Generating linked Excel workbook with 10 formatted sheets...');
@@ -168,25 +165,25 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
       
-      {/* Header */}
-      <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+      {/* Light Header */}
+      <header className="bg-white text-slate-900 border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-teal-500/20 border border-teal-500/30 rounded-xl text-teal-400">
+            <div className="p-2 bg-teal-50 border border-teal-200 rounded-xl text-teal-600">
               <FileSpreadsheet size={24} />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight tracking-tight">
-                Prashanth Hospital <span className="text-teal-400">Master File Analyzer</span>
+              <h1 className="font-bold text-lg leading-tight tracking-tight text-slate-900">
+                Prashanth Hospital <span className="text-teal-600">Master File Analyzer</span>
               </h1>
-              <p className="text-xs text-slate-400">Single Source of Truth Quality Sanitization Engine</p>
+              <p className="text-xs text-slate-500">Single Source of Truth Quality Sanitization Engine</p>
             </div>
           </div>
           
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-300 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700">
-            <Building2 size={14} className="text-teal-400" />
+          <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+            <Building2 size={14} className="text-teal-600" />
             <span>{branch}</span>
           </div>
         </div>
@@ -196,14 +193,13 @@ export default function App() {
       <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-8">
 
         {/* ------------------------------------------------------------- */}
-        {/* STEP 1: LANDING PAGE & UPLOAD FORM (When no result)           */}
+        {/* STEP 1: LANDING PAGE & UPLOAD FORM                            */}
         {/* ------------------------------------------------------------- */}
         {!analysisResult && !isAnalyzing && (
           <div className="space-y-6">
             
             {/* Main Landing Banner */}
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl -z-10" />
+            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs relative overflow-hidden">
               
               <div className="max-w-2xl">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 mb-4">
@@ -230,7 +226,7 @@ export default function App() {
                   <select
                     value={branch}
                     onChange={(e) => setBranch(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
                   >
                     {branches.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
@@ -245,7 +241,7 @@ export default function App() {
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
                   >
                     {departments.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
@@ -260,7 +256,7 @@ export default function App() {
                   <select
                     value={masterType}
                     onChange={(e) => setMasterType(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
                   >
                     {masterTypes.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
@@ -280,7 +276,7 @@ export default function App() {
                   onDragOver={handleDragOver}
                   className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
                     file
-                      ? 'border-teal-500 bg-teal-50/40'
+                      ? 'border-teal-500 bg-teal-50/50'
                       : 'border-slate-300 bg-slate-50 hover:bg-slate-100/80 hover:border-slate-400'
                   }`}
                 >
@@ -327,7 +323,7 @@ export default function App() {
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={handleAnalyse}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2"
                 >
                   <span>Analyse File</span>
                   <ArrowRight size={16} />
@@ -343,7 +339,7 @@ export default function App() {
         {/* STEP 2: ANALYSIS IN PROGRESS                                  */}
         {/* ------------------------------------------------------------- */}
         {isAnalyzing && (
-          <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center max-w-xl mx-auto my-12 space-y-6">
+          <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-xs text-center max-w-xl mx-auto my-12 space-y-6">
             <div className="w-16 h-16 bg-teal-50 border border-teal-200 rounded-full flex items-center justify-center mx-auto text-teal-600 animate-spin">
               <Loader2 size={32} />
             </div>
@@ -374,7 +370,7 @@ export default function App() {
           <div className="space-y-6">
             
             {/* Header Summary Card */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -395,7 +391,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleReset}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5"
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 border border-slate-200"
                 >
                   <RotateCcw size={14} />
                   Analyse Another File
@@ -403,16 +399,16 @@ export default function App() {
               </div>
             </div>
 
-            {/* Core Explanatory Terminology Banner */}
-            <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
+            {/* Light Explanatory Terminology Banner */}
+            <div className="bg-teal-50/80 text-teal-950 rounded-2xl p-5 border border-teal-200/80 shadow-xs">
               <div className="flex items-start gap-3">
-                <ShieldAlert className="text-teal-400 shrink-0 mt-0.5" size={20} />
+                <ShieldAlert className="text-teal-700 shrink-0 mt-0.5" size={20} />
                 <div className="text-xs space-y-1 leading-relaxed">
                   <p>
-                    <strong className="text-teal-300">“Affected Records”</strong> means unique source records containing one or more data quality issues.
+                    <strong className="text-teal-900 font-bold">“Affected Records”</strong> means unique source records containing one or more data quality issues.
                   </p>
                   <p>
-                    <strong className="text-teal-300">“Total Issues”</strong> means all individual issue flags identified across the dataset. One record may contain multiple issues.
+                    <strong className="text-teal-900 font-bold">“Total Issues”</strong> means all individual issue flags identified across the dataset. One record may contain multiple issues.
                   </p>
                 </div>
               </div>
@@ -433,19 +429,19 @@ export default function App() {
                 <span className="text-[10px] text-slate-400 mt-1 block">Distinct primary IDs</span>
               </div>
 
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-xs">
+              <div className="bg-amber-50/80 p-4 rounded-xl border border-amber-200 shadow-xs">
                 <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">Affected Records</span>
                 <span className="text-2xl font-black text-amber-900 mt-1 block">{analysisResult.summary.affected_records.toLocaleString()}</span>
                 <span className="text-[10px] text-amber-700 font-semibold mt-1 block">Records with 1+ issues</span>
               </div>
 
-              <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 shadow-xs">
+              <div className="bg-emerald-50/80 p-4 rounded-xl border border-emerald-200 shadow-xs">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Clean Records</span>
                 <span className="text-2xl font-black text-emerald-900 mt-1 block">{analysisResult.summary.clean_records.toLocaleString()}</span>
                 <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">Zero issues found</span>
               </div>
 
-              <div className="bg-rose-50 p-4 rounded-xl border border-rose-200 shadow-xs">
+              <div className="bg-rose-50/80 p-4 rounded-xl border border-rose-200 shadow-xs">
                 <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider block">Total Issues</span>
                 <span className="text-2xl font-black text-rose-900 mt-1 block">{analysisResult.summary.total_issues.toLocaleString()}</span>
                 <span className="text-[10px] text-rose-700 font-semibold mt-1 block">Total issue flags</span>
@@ -484,11 +480,11 @@ export default function App() {
             </div>
 
             {/* Action Buttons Panel */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               
               <button
                 onClick={() => setIsPreviewOpen(true)}
-                className="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-2"
+                className="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all flex items-center gap-2"
               >
                 <Eye size={16} />
                 Preview Executive Summary
@@ -505,7 +501,7 @@ export default function App() {
 
                 <button
                   onClick={() => downloadFile(analysisResult.excel_download_url)}
-                  className="px-6 py-3 text-xs font-extrabold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                  className="px-6 py-3 text-xs font-extrabold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl shadow-xs transition-all flex items-center gap-2"
                 >
                   <FileSpreadsheet size={18} />
                   Download Correction Workbook (.xlsx)

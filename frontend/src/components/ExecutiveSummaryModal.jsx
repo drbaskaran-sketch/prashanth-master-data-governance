@@ -9,28 +9,30 @@ export default function ExecutiveSummaryModal({ isOpen, onClose, data, onDownloa
   const findings = summary.dept_findings || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200">
         
-        {/* Modal Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        {/* Light Modal Header */}
+        <div className="px-6 py-4 bg-white text-slate-900 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <FileSpreadsheet className="text-teal-400" size={24} />
+            <div className="p-2 bg-teal-50 border border-teal-200 rounded-xl text-teal-600">
+              <FileSpreadsheet size={20} />
+            </div>
             <div>
-              <h2 className="font-bold text-lg leading-tight">Executive Summary Preview</h2>
-              <p className="text-xs text-slate-300">Kranium HIS Master Sanitization Audit — {data.filename}</p>
+              <h2 className="font-bold text-lg leading-tight text-slate-900">Executive Summary Preview</h2>
+              <p className="text-xs text-slate-500">Kranium HIS Master Sanitization Audit — {data.filename}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-700">
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-700 bg-white">
           
           {/* Metadata Banner */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
@@ -59,8 +61,8 @@ export default function ExecutiveSummaryModal({ isOpen, onClose, data, onDownloa
               Key Data Quality Metrics
             </h3>
             <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
+              <table className="w-full text-xs text-left border-collapse bg-white">
+                <thead className="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider">
                   <tr>
                     <th className="p-3 border-b border-slate-200">Category</th>
                     <th className="p-3 border-b border-slate-200 text-center">Count</th>
@@ -118,8 +120,8 @@ export default function ExecutiveSummaryModal({ isOpen, onClose, data, onDownloa
             <div>
               <h3 className="font-bold text-slate-900 text-sm mb-3">Correction Priorities Roadmap</h3>
               <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
+                <table className="w-full text-xs text-left border-collapse bg-white">
+                  <thead className="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider">
                     <tr>
                       <th className="p-3 border-b border-slate-200 text-center">#</th>
                       <th className="p-3 border-b border-slate-200">Workstream</th>
@@ -173,7 +175,7 @@ export default function ExecutiveSummaryModal({ isOpen, onClose, data, onDownloa
             </button>
             <button
               onClick={onDownloadExcel}
-              className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs transition-all flex items-center gap-1.5"
             >
               <FileSpreadsheet size={14} />
               Download Correction Workbook (.xlsx)
