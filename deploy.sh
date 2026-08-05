@@ -11,7 +11,7 @@ echo "📦 Installing Python Backend Dependencies..."
 python3 -m pip install fastapi uvicorn pandas polars openpyxl xlsxwriter rapidfuzz python-multipart --break-system-packages
 
 # 2. Install Frontend Dependencies & Build Assets
-echo "🎨 Installing Frontend Dependencies & Building Assets..."
+echo "🎨 Installing Frontend Dependencies..."
 cd frontend
 npm install
 npm run build
@@ -23,7 +23,7 @@ pm2 stop mdg-backend mdg-frontend 2>/dev/null || true
 pm2 delete mdg-backend mdg-frontend 2>/dev/null || true
 
 pm2 start "python3 main.py" --cwd backend --name mdg-backend
-pm2 start "npm run preview -- --host 0.0.0.0 --port 3001" --cwd frontend --name mdg-frontend
+pm2 start "npm run dev -- --host 0.0.0.0 --port 3001" --cwd frontend --name mdg-frontend
 pm2 save
 
 echo "=========================================================================="

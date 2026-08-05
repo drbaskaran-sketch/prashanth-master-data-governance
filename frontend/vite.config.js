@@ -5,6 +5,23 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3001,
+    host: '0.0.0.0',
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5050',
+        changeOrigin: true
+      }
+    }
+  },
+  preview: {
+    port: 3001,
+    host: '0.0.0.0',
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5050',

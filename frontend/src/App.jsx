@@ -178,7 +178,7 @@ export default function App() {
               <h1 className="font-bold text-lg leading-tight tracking-tight text-slate-900">
                 Prashanth Hospital <span className="text-teal-600">Master File Analyzer</span>
               </h1>
-              <p className="text-xs text-slate-500">Single Source of Truth Quality Sanitization Engine</p>
+              <p className="text-xs text-slate-500">Master File Data Quality Inspection</p>
             </div>
           </div>
           
@@ -358,7 +358,7 @@ export default function App() {
             </div>
 
             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              Step {progressStep} of 4 — Prashanth MDG Sanitization Engine
+              Step {progressStep} of 4 — Prashanth Master File Inspection
             </div>
           </div>
         )}
@@ -517,7 +517,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 text-center py-4 text-xs text-slate-500">
-        © 2026 Prashanth Hospitals Group. All rights reserved. • Master Data Quality Sanitization Platform
+        © 2026 Prashanth Hospitals Group. All rights reserved. • Master File Quality Inspection
       </footer>
 
       {/* Preview Modal */}
