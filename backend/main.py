@@ -24,7 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ensure temp workbook directory exists
 WORKBOOK_DIR = "/tmp/workbooks"
 os.makedirs(WORKBOOK_DIR, exist_ok=True)
 
@@ -57,7 +56,6 @@ async def analyze_file(
         if df.empty:
             raise HTTPException(status_code=400, detail="The uploaded file contains no data rows.")
             
-        # Determine actual master type
         effective_master_type = master_type if master_type and master_type != "Auto-detect" else department
         
         # 2. Analyze Dataset
@@ -135,6 +133,7 @@ async def analyze_file(
                 "missing_fields": analysis_results['missing_fields'],
                 "invalid_values": analysis_results['invalid_values'],
                 "spelling_issues": analysis_results['spelling_issues'],
+                "casing_issues": analysis_results.get('casing_issues', 0),
                 "duplicate_ids": analysis_results['duplicate_ids'],
                 "repeated_rows": analysis_results['repeated_rows'],
                 "dept_findings": analysis_results['dept_findings'],

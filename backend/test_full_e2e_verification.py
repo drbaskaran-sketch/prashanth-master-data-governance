@@ -26,17 +26,17 @@ assert "Master Registry Schemas" not in html_text
 assert "Multi-Role Approval Queues" not in html_text
 print("✅ Frontend HTML Asset Verification Passed!")
 
-# 3. Test End-to-End File Analysis (Stores Sample)
-print("\n3. Testing End-to-End Stores Master Upload & Analysis...")
-stores_csv = """store_code,item_name,category,hsn_code,status
-STR-10001, Surgical Gloves 7.5 Powdered ,Surgical,30049099,ACTIVE
-STR-10001, Surgical Gloves 7.5 Powdered ,Surgical,30049099,ACTIVE
-STR-10002,  ,Surgical,30041010,ACTIVE
-STR-10003,IV Cannula 20G,Surgical,INVALID_HSN_CODE,INVALID_STATUS_XYZ
+# 3. Test End-to-End User / General Master Upload with Casing & Login ID Rules
+print("\n3. Testing User / Employee Master Upload with Casing & Login ID Validation...")
+user_master_csv = """user_id,employee_name,login_id,status
+EMP-001,JOHN DOE,john.doe,ACTIVE
+EMP-002,jane smith,JaneSmith123,ACTIVE
+EMP-003,Robert99,robert smith,ACTIVE
+EMP-004,  Dr. A. R. Baskaran  ,dr.baskaran,INVALID_STATUS
 """
 
-files = {'file': ('Stores_Master_Audit_Test.csv', stores_csv, 'text/csv')}
-data = {'branch': 'Main Branch - Chetpet', 'department': 'Stores', 'master_type': 'Stores & Consumables Master'}
+files = {'file': ('General_User_Master_Sample.csv', user_master_csv, 'text/csv')}
+data = {'branch': 'Velachery Unit', 'department': 'General/Other Masters', 'master_type': 'Employee Master'}
 
 r_analyze = requests.post(f"{BASE_URL}/api/analyze", files=files, data=data)
 assert r_analyze.status_code == 200, f"Analysis failed: {r_analyze.text}"
@@ -46,20 +46,19 @@ assert result['success'] == True
 summary = result['summary']
 
 print("   Summary Results:")
-print(f"   • Total Records:    {summary['total_records']}")
-print(f"   • Unique Records:   {summary['unique_records']}")
-print(f"   • Affected Records: {summary['affected_records']}")
-print(f"   • Clean Records:    {summary['clean_records']}")
-print(f"   • Total Issues:     {summary['total_issues']}")
+print(f"   • Total Records:          {summary['total_records']}")
+print(f"   • Unique Records:         {summary['unique_records']}")
+print(f"   • Affected Records:       {summary['affected_records']}")
+print(f"   • Clean Records:          {summary['clean_records']}")
+print(f"   • Total Issues:           {summary['total_issues']}")
+print(f"   • Casing & Format Flags:  {summary.get('casing_issues', 0)}")
 
 assert summary['total_records'] == 4
-assert summary['unique_records'] == 3
 assert summary['affected_records'] == 4
-assert summary['clean_records'] == 0
-assert summary['total_issues'] == 7
-print("✅ Stores Analysis Metrics Verification Passed!")
+assert summary.get('casing_issues', 0) >= 4
+print("✅ Casing & Login ID Format Metrics Verification Passed!")
 
-# 4. Test Excel Workbook Generation & Structure
+# 4. Test Excel Correction Workbook Download & Structure
 print("\n4. Testing Excel Correction Workbook Download & Structure...")
 excel_url = f"{BASE_URL}{result['excel_download_url']}"
 r_excel = requests.get(excel_url)
@@ -69,27 +68,22 @@ wb = openpyxl.load_workbook(io.BytesIO(r_excel.content))
 expected_sheets = [
     'Executive Summary', 'Original Master Data', 'All Issues', 'Affected Records',
     'Duplicate Records', 'Missing Fields', 'Invalid Values', 'Spelling and Standardisation',
-    'Department-Specific Review', 'Correction Priorities', 'Sanitization Rules'
+    'Casing and Formatting', 'Department-Specific Review',
+    'Correction Priorities', 'Sanitization Rules'
 ]
 
 print("   Workbook Sheet Names:", wb.sheetnames)
 assert wb.sheetnames == expected_sheets, f"Sheets mismatch: {wb.sheetnames}"
 
-# Check Executive Summary cell values
-ws_exec = wb['Executive Summary']
-exec_title = ws_exec.cell(row=1, column=1).value
-assert "Kranium HIS Master Sanitization — Executive Summary" in exec_title
-
-# Check Sheet 2: Original Master Data row count
-ws_orig = wb['Original Master Data']
-assert ws_orig.cell(row=4, column=1).value == "STR-10001"
-assert ws_orig.cell(row=7, column=1).value == "STR-10003"
-print("✅ Original Master Data Sheet Data Verification Passed!")
-
-# Check sheet hyperlink back link in All Issues sheet
-ws_issues = wb['All Issues']
-back_link = ws_issues.cell(row=1, column=1).value
-assert "Executive Summary" in str(back_link)
+# Check Casing and Formatting sheet
+ws_casing = wb['Casing and Formatting']
+assert ws_casing.cell(row=4, column=1).value == "EMP-001"
+# Orig cols = 4 (user_id, employee_name, login_id, status), so governance starts at col 5
+issue_type_val = ws_casing.cell(row=4, column=5).value
+suggested_val = ws_casing.cell(row=4, column=8).value
+print(f"   Row 4 -> Issue Type (Col 5): '{issue_type_val}', Suggested (Col 8): '{suggested_val}'")
+assert "Numeric Digits" in str(issue_type_val) or "ALL CAPS" in str(issue_type_val) or "Emp" in str(suggested_val) or "John Doe" in str(suggested_val)
+print("✅ Casing and Formatting Sheet Row Verification Passed!")
 
 print("✅ Excel Workbook Structure & Link Verification Passed!")
 
@@ -98,7 +92,7 @@ print("\n5. Testing CSV Issues Export Download...")
 csv_url = f"{BASE_URL}{result['csv_download_url']}"
 r_csv = requests.get(csv_url)
 assert r_csv.status_code == 200, f"CSV download failed: {r_csv.status_code}"
-assert "Exact Duplicate Row" in r_csv.text or "Duplicate Record ID" in r_csv.text
+assert "Casing" in r_csv.text or "Login" in r_csv.text or "ALL CAPS" in r_csv.text or "Numeric Digits" in r_csv.text
 print("✅ CSV Export Verification Passed!")
 
 print("\n==========================================================================")

@@ -2,17 +2,14 @@ import re
 import pandas as pd
 from rapidfuzz import fuzz, process
 
-# Identification of primary ID field based on master type or column names
 def detect_id_column(columns: list[str], master_type: str) -> str:
     m_lower = master_type.lower()
     
-    # Check explicit column matches
     for col in columns:
         c_lower = col.lower()
-        if c_lower in ['stock_id', 'item_code', 'code', 'doctor_code', 'test_code', 'service_code', 'bed_code', 'store_code', 'payer_code', 'id']:
+        if c_lower in ['stock_id', 'item_code', 'code', 'doctor_code', 'test_code', 'service_code', 'bed_code', 'store_code', 'payer_code', 'user_id', 'login_id', 'id']:
             return col
     
-    # Priority keywords based on department
     keywords = ['code', 'id', 'no', 'number']
     for kw in keywords:
         for col in columns:
@@ -24,7 +21,7 @@ def detect_id_column(columns: list[str], master_type: str) -> str:
 def detect_description_column(columns: list[str]) -> str:
     for col in columns:
         c_lower = col.lower()
-        if any(term in c_lower for term in ['name', 'description', 'desc', 'item', 'title', 'test', 'drug']):
+        if any(term in c_lower for term in ['name', 'description', 'desc', 'item', 'title', 'test', 'drug', 'label']):
             return col
     return columns[1] if len(columns) > 1 else (columns[0] if columns else "")
 
@@ -46,13 +43,13 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
     count_missing_fields = 0
     count_invalid_values = 0
     count_spelling_issues = 0
+    count_casing_issues = 0
     count_dept_specific = 0
     
     # Track Duplicate IDs and Exact Repeated Rows
-    id_tracker = {} # id -> list of row indices
-    exact_row_tracker = {} # tuple of row values -> list of row indices
+    id_tracker = {}
+    exact_row_tracker = {}
     
-    # Convert dataframe to records for fast scanning
     records = df.to_dict(orient='records')
     
     # 1. Exact Duplicate Rows Check
@@ -122,17 +119,10 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
                         'category': 'Duplicate Records'
                     })
 
-    # Unique Record IDs Count
     unique_ids_count = len(id_tracker) if id_col else total_records
-
-    # 3. Row by Row Rules (Missing Mandatory, Formatting, Casing, Whitespace, Dept Rules)
     status_col = next((c for c in columns if 'status' in c.lower()), None)
     
-    # Fuzzy match candidates list for descriptions
-    desc_sample = []
-    if desc_col:
-        desc_sample = [str(r.get(desc_col, '')).strip() for r in records if str(r.get(desc_col, '')).strip()]
-        
+    # 3. Row by Row Rules
     for idx, row in enumerate(records):
         row_num = idx + 1
         
@@ -168,10 +158,17 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
                 'category': 'Missing Fields'
             })
 
-        # Whitespace / Formatting Checks
+        # Whitespace / Casing / Alphanumeric Formatting Checks
         for c in columns:
             val_str = str(row.get(c, ''))
-            if val_str and (val_str.startswith(' ') or val_str.endswith(' ')):
+            val_strip = val_str.strip()
+            c_lower = c.lower()
+            
+            if not val_strip:
+                continue
+
+            # A. Whitespace Checks
+            if val_str.startswith(' ') or val_str.endswith(' '):
                 affected_rows_set.add(idx)
                 count_spelling_issues += 1
                 count_medium += 1
@@ -180,7 +177,7 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
                     'issue_type': 'Leading/Trailing Whitespace',
                     'field_name': c,
                     'original_value': val_str,
-                    'suggested_correction': val_str.strip(),
+                    'suggested_correction': val_strip,
                     'priority': 'Medium',
                     'responsible_dept': master_type,
                     'category': 'Spelling and Standardisation'
@@ -199,6 +196,103 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
                     'responsible_dept': master_type,
                     'category': 'Spelling and Standardisation'
                 })
+
+            # B. Casing & Alphanumeric Rules for Name Fields
+            if any(k in c_lower for k in ['name', 'person', 'doctor', 'employee', 'user', 'staff', 'hod', 'manager']):
+                # 1. Alphanumeric / Digits in Person Name
+                if re.search(r'\d', val_strip):
+                    affected_rows_set.add(idx)
+                    count_casing_issues += 1
+                    count_high += 1
+                    cleaned_name = re.sub(r'\d+', '', val_strip).strip().title()
+                    all_issues.append({
+                        'row_index': row_num,
+                        'issue_type': 'Numeric Digits in Name Field',
+                        'field_name': c,
+                        'original_value': val_strip,
+                        'suggested_correction': cleaned_name if cleaned_name else 'Department Validation Required (Remove Digits)',
+                        'priority': 'High',
+                        'responsible_dept': master_type,
+                        'category': 'Casing and Formatting'
+                    })
+                # 2. ALL CAPS Name
+                elif val_strip.isupper() and len(val_strip) > 3 and any(char.isalpha() for char in val_strip):
+                    affected_rows_set.add(idx)
+                    count_casing_issues += 1
+                    count_medium += 1
+                    all_issues.append({
+                        'row_index': row_num,
+                        'issue_type': 'ALL CAPS Name Casing',
+                        'field_name': c,
+                        'original_value': val_strip,
+                        'suggested_correction': val_strip.title(),
+                        'priority': 'Medium',
+                        'responsible_dept': master_type,
+                        'category': 'Casing and Formatting'
+                    })
+                # 3. Lowercase Name
+                elif val_strip.islower() and any(char.isalpha() for char in val_strip):
+                    affected_rows_set.add(idx)
+                    count_casing_issues += 1
+                    count_medium += 1
+                    all_issues.append({
+                        'row_index': row_num,
+                        'issue_type': 'Lowercase Name Casing',
+                        'field_name': c,
+                        'original_value': val_strip,
+                        'suggested_correction': val_strip.title(),
+                        'priority': 'Medium',
+                        'responsible_dept': master_type,
+                        'category': 'Casing and Formatting'
+                    })
+
+            # C. Rules for Login ID / User Identifier Fields
+            if any(k in c_lower for k in ['login', 'username', 'user_id', 'login_id', 'emp_code', 'emp_id']):
+                # 1. Whitespace in Login Identifier
+                if ' ' in val_strip:
+                    affected_rows_set.add(idx)
+                    count_casing_issues += 1
+                    count_high += 1
+                    all_issues.append({
+                        'row_index': row_num,
+                        'issue_type': 'Whitespace Space in Login Identifier',
+                        'field_name': c,
+                        'original_value': val_strip,
+                        'suggested_correction': re.sub(r'\s+', '', val_strip).lower(),
+                        'priority': 'High',
+                        'responsible_dept': master_type,
+                        'category': 'Casing and Formatting'
+                    })
+                # 2. Uppercase Letters in Login Identifier
+                elif any(char.isupper() for char in val_strip):
+                    affected_rows_set.add(idx)
+                    count_casing_issues += 1
+                    count_medium += 1
+                    all_issues.append({
+                        'row_index': row_num,
+                        'issue_type': 'Uppercase Letters in Login Identifier',
+                        'field_name': c,
+                        'original_value': val_strip,
+                        'suggested_correction': val_strip.lower(),
+                        'priority': 'Medium',
+                        'responsible_dept': master_type,
+                        'category': 'Casing and Formatting'
+                    })
+                # 3. Special Characters in Login Identifier
+                elif re.search(r'[^a-zA-Z0-9._-]', val_strip):
+                    affected_rows_set.add(idx)
+                    count_casing_issues += 1
+                    count_high += 1
+                    all_issues.append({
+                        'row_index': row_num,
+                        'issue_type': 'Special Characters in Login Identifier',
+                        'field_name': c,
+                        'original_value': val_strip,
+                        'suggested_correction': re.sub(r'[^a-zA-Z0-9._-]', '', val_strip).lower(),
+                        'priority': 'High',
+                        'responsible_dept': master_type,
+                        'category': 'Casing and Formatting'
+                    })
 
         # Invalid Status Check
         if status_col:
@@ -223,7 +317,6 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
         
         # Pharmacy Rules
         if 'PHARMACY' in m_type_upper:
-            # Schedule H/H1/X validation
             sched_col = next((c for c in columns if 'schedule' in c.lower()), None)
             if sched_col:
                 sch_val = str(row.get(sched_col, '')).strip().upper()
@@ -241,7 +334,6 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
                         'responsible_dept': 'Pharmacy / Drug Controller',
                         'category': 'Department-Specific Review'
                     })
-            # LASA / Generic Safety Warning
             name_val = str(row.get(desc_col, '')).lower() if desc_col else ''
             if any(term in name_val for term in ['mg', 'ml', 'tab', 'cap', 'inj']):
                 if 'generic' in ''.join(columns).lower():
@@ -310,6 +402,8 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
         dept_findings.append(f"Found {repeated_rows_count} exact redundant duplicate rows.")
     if count_missing_fields > 0:
         dept_findings.append(f"Identified {count_missing_fields} missing mandatory values in core columns.")
+    if count_casing_issues > 0:
+        dept_findings.append(f"Found {count_casing_issues} name casing, alphanumeric mix, or login ID formatting inconsistencies.")
     if count_spelling_issues > 0:
         dept_findings.append(f"Found {count_spelling_issues} whitespace/formatting inconsistencies.")
 
@@ -333,6 +427,14 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
         },
         {
             "order": 3,
+            "workstream": "Casing & Formatting Standardisation",
+            "evidence": f"{count_casing_issues} Name Casing & Login ID Format Flags",
+            "priority": "Medium",
+            "required_action": "Standardize names to Title Case, remove digits from person names, and convert login IDs to lowercase without spaces.",
+            "responsible_dept": "User & Master Data Team"
+        },
+        {
+            "order": 4,
             "workstream": "Value & Standardisation Corrections",
             "evidence": f"{count_invalid_values + count_spelling_issues} Invalid Values & Space Inconsistencies",
             "priority": "Medium",
@@ -340,7 +442,7 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
             "responsible_dept": "Master Data Team"
         },
         {
-            "order": 4,
+            "order": 5,
             "workstream": "Clinical & Departmental Signoff",
             "evidence": f"{count_dept_specific} Department Specific Validation Warnings",
             "priority": "High",
@@ -362,6 +464,7 @@ def analyze_dataset(df: pd.DataFrame, master_type: str, branch: str, file_warnin
         "missing_fields": count_missing_fields,
         "invalid_values": count_invalid_values,
         "spelling_issues": count_spelling_issues,
+        "casing_issues": count_casing_issues,
         "duplicate_ids": duplicate_id_count,
         "repeated_rows": repeated_rows_count,
         "dept_findings": dept_findings,

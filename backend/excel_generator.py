@@ -15,12 +15,8 @@ def generate_excel_workbook(
     output_filepath: str
 ):
     wb = openpyxl.Workbook()
-    # Remove default sheet
     wb.remove(wb.active)
     
-    # -------------------------------------------------------------
-    # STYLES & PALETTE
-    # -------------------------------------------------------------
     font_family = "Segoe UI"
     
     title_font = Font(name=font_family, size=16, bold=True, color="1F4E79")
@@ -31,12 +27,10 @@ def generate_excel_workbook(
     regular_font = Font(name=font_family, size=10)
     link_font = Font(name=font_family, size=10, underline="single", color="0563C1")
     
-    # Fills
     navy_header_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
     teal_header_fill = PatternFill(start_color="008080", end_color="008080", fill_type="solid")
     slate_fill = PatternFill(start_color="F2F4F7", end_color="F2F4F7", fill_type="solid")
     
-    # Priority & Status Fills
     red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
     red_font = Font(name=font_family, size=10, color="9C0006", bold=True)
     
@@ -52,7 +46,6 @@ def generate_excel_workbook(
     grey_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
     grey_font = Font(name=font_family, size=10, color="595959")
     
-    # Borders
     thin_border = Border(
         left=Side(style='thin', color='D9D9D9'),
         right=Side(style='thin', color='D9D9D9'),
@@ -66,11 +59,9 @@ def generate_excel_workbook(
     ws_exec = wb.create_sheet(title="Executive Summary")
     ws_exec.views.sheetView[0].showGridLines = True
     
-    # Title
     ws_exec.cell(row=1, column=1, value="Kranium HIS Master Sanitization — Executive Summary").font = title_font
     ws_exec.cell(row=2, column=1, value="Prashanth Hospital Master File Quality Audit & Sanitization Report").font = subtitle_font
     
-    # File Metadata Table
     ws_exec.cell(row=4, column=1, value="File Analysis Metadata").font = section_font
     meta_items = [
         ("Source Filename:", filename),
@@ -88,7 +79,6 @@ def generate_excel_workbook(
         if k.startswith("Integrity"):
             cell_v.font = Font(name=font_family, size=10, bold=True, color="008000")
             
-    # Metrics Table
     ws_exec.cell(row=12, column=1, value="Executive Metrics Breakdown").font = section_font
     metrics_headers = ["Metric Category", "Count", "Description & Interpretation"]
     for c_idx, h in enumerate(metrics_headers, start=1):
@@ -108,7 +98,8 @@ def generate_excel_workbook(
         ("Duplicate Record IDs", analysis_results['duplicate_ids'], "Records sharing identical key identifiers"),
         ("Repeated Rows", analysis_results['repeated_rows'], "100% identical redundant rows"),
         ("Missing Mandatory Fields", analysis_results['missing_fields'], "Empty cells in mandatory primary/attribute columns"),
-        ("Invalid Field Values", analysis_results['invalid_values'], "Values failing data-type or controlled list validation")
+        ("Invalid Field Values", analysis_results['invalid_values'], "Values failing data-type or controlled list validation"),
+        ("Casing & Format Flags", analysis_results.get('casing_issues', 0), "Name casing, digits in names, and login ID formatting errors")
     ]
     
     for r_idx, (cat, val, desc) in enumerate(metrics_rows, start=14):
@@ -129,24 +120,24 @@ def generate_excel_workbook(
             c1.fill = amber_fill if cat != "Critical Priority Issues" else red_fill
             c2.fill = amber_fill if cat != "Critical Priority Issues" else red_fill
 
-    # Quick Jump Sheet Links
-    ws_exec.cell(row=27, column=1, value="Quick Sheet Navigation Links").font = section_font
+    ws_exec.cell(row=28, column=1, value="Quick Sheet Navigation Links").font = section_font
     nav_links = [
         ("View Original Master Data", "'Original Master Data'!A1", "Go to 100% complete raw uploaded source dataset"),
         ("View Affected Records", "'Affected Records'!A1", "Go to list of unique records requiring sanitization"),
         ("View Duplicate Records", "'Duplicate Records'!A1", "Go to duplicate key and repeated row findings"),
         ("View Missing Fields", "'Missing Fields'!A1", "Go to missing mandatory values sheet"),
         ("View Invalid Values", "'Invalid Values'!A1", "Go to invalid status and formatting errors"),
+        ("View Casing and Formatting", "'Casing and Formatting'!A1", "Go to name casing, digits in names, and login ID formatting findings"),
         ("View Critical Issues", "'All Issues'!A1", "Go to master issues log containing all flags"),
         ("View Department-Specific Review", "'Department-Specific Review'!A1", "Go to clinical / drug / tariff safety warnings")
     ]
     
     for c_idx, h in enumerate(["Target Sheet", "Hyperlink Action", "Sheet Purpose"], start=1):
-        c = ws_exec.cell(row=28, column=c_idx, value=h)
+        c = ws_exec.cell(row=29, column=c_idx, value=h)
         c.font = header_font
         c.fill = teal_header_fill
         
-    for r_idx, (label, target, purp) in enumerate(nav_links, start=29):
+    for r_idx, (label, target, purp) in enumerate(nav_links, start=30):
         c1 = ws_exec.cell(row=r_idx, column=1, value=label)
         c2 = ws_exec.cell(row=r_idx, column=2, value=f"=HYPERLINK(\"#{target}\", \"Open Sheet ->\")")
         c3 = ws_exec.cell(row=r_idx, column=3, value=purp)
@@ -159,15 +150,14 @@ def generate_excel_workbook(
         c2.border = thin_border
         c3.border = thin_border
 
-    # Correction Priorities Table
-    ws_exec.cell(row=38, column=1, value="Correction Priorities & Workstream Roadmap").font = section_font
+    ws_exec.cell(row=40, column=1, value="Correction Priorities & Workstream Roadmap").font = section_font
     prio_headers = ["Order", "Workstream", "Evidence", "Priority", "Required Action", "Responsible Department"]
     for c_idx, h in enumerate(prio_headers, start=1):
-        c = ws_exec.cell(row=39, column=c_idx, value=h)
+        c = ws_exec.cell(row=41, column=c_idx, value=h)
         c.font = header_font
         c.fill = navy_header_fill
         
-    for r_idx, item in enumerate(analysis_results['priorities_list'], start=40):
+    for r_idx, item in enumerate(analysis_results['priorities_list'], start=42):
         c1 = ws_exec.cell(row=r_idx, column=1, value=item['order'])
         c2 = ws_exec.cell(row=r_idx, column=2, value=item['workstream'])
         c3 = ws_exec.cell(row=r_idx, column=3, value=item['evidence'])
@@ -210,7 +200,6 @@ def generate_excel_workbook(
             c = ws_orig.cell(row=r_idx+4, column=c_idx, value=str(row_data.get(c_name, "")))
             c.font = regular_font
             c.border = thin_border
-        # Audit status column
         c_st = ws_orig.cell(row=r_idx+4, column=len(orig_cols)+1, value="Original Source Data")
         c_st.font = regular_font
         c_st.fill = slate_fill
@@ -220,7 +209,7 @@ def generate_excel_workbook(
     ws_orig.auto_filter.ref = f"A3:{get_column_letter(len(orig_headers))}{len(df)+3}"
 
     # -------------------------------------------------------------
-    # CORRECTION SHEETS (3 TO 9)
+    # CORRECTION SHEETS (3 TO 10)
     # -------------------------------------------------------------
     governance_headers = [
         "Issue Type", "Field Name", "Original Value", "Suggested Correction/Action",
@@ -229,8 +218,6 @@ def generate_excel_workbook(
     ]
     
     all_headers = orig_cols + governance_headers
-    
-    # Data Validation Dropdown for Correction Status
     dv_status = DataValidation(type="list", formula1='"Pending,Corrected,No Change Required,Needs Clarification"', allow_blank=True)
     
     all_issues_list = analysis_results['all_issues']
@@ -242,6 +229,7 @@ def generate_excel_workbook(
         ("Missing Fields", [i for i in all_issues_list if i['category'] == 'Missing Fields']),
         ("Invalid Values", [i for i in all_issues_list if i['category'] == 'Invalid Values']),
         ("Spelling and Standardisation", [i for i in all_issues_list if i['category'] == 'Spelling and Standardisation']),
+        ("Casing and Formatting", [i for i in all_issues_list if i['category'] == 'Casing and Formatting']),
         ("Department-Specific Review", [i for i in all_issues_list if i['category'] == 'Department-Specific Review']),
     ]
 
@@ -250,11 +238,9 @@ def generate_excel_workbook(
         ws.views.sheetView[0].showGridLines = True
         ws.add_data_validation(dv_status)
         
-        # Link Back to Executive Summary
         link_cell = ws.cell(row=1, column=1, value='=HYPERLINK("#\'Executive Summary\'!A1", "<- Back to Executive Summary")')
         link_cell.font = link_font
         
-        # Headers at Row 3
         for col_idx, h in enumerate(all_headers, start=1):
             c = ws.cell(row=3, column=col_idx, value=h)
             c.font = header_font
@@ -262,27 +248,23 @@ def generate_excel_workbook(
             c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             
         ws.row_dimensions[3].height = 28
-        
         row_counter = 4
         
-        # IF NO ISSUES FOUND FOR THIS CATEGORY: Populate ALL original source rows with "No Change Required"
         if not issues_subset:
             for row_idx in range(len(df)):
                 row_data = df.iloc[row_idx]
-                # 1. Fill Original Source Columns
                 for col_idx, c_name in enumerate(orig_cols, start=1):
                     val = row_data.get(c_name, "")
                     c = ws.cell(row=row_counter, column=col_idx, value=str(val))
                     c.font = regular_font
                     c.border = thin_border
                     
-                # 2. Fill Governance Columns
                 no_issue_vals = [
                     "Clean / Compliant",
                     "ALL_FIELDS",
                     "",
                     "No change required — 100% compliant in this check category.",
-                    "", # Corrected Value
+                    "",
                     "Low",
                     master_type,
                     "No Change Required",
@@ -296,37 +278,34 @@ def generate_excel_workbook(
                     c = ws.cell(row=row_counter, column=c_col, value=g_val)
                     c.font = regular_font
                     c.border = thin_border
-                    if g_offset == 7: # Status column
+                    if g_offset == 7:
                         c.fill = green_fill
                         c.font = green_font
                         dv_status.add(c)
                 row_counter += 1
         else:
-            # Build Data Rows for Issues Found
             for issue in issues_subset:
                 orig_row_idx = issue['row_index'] - 1
                 row_data = df.iloc[orig_row_idx] if orig_row_idx < len(df) else {}
                 
-                # 1. Fill Original Source Columns
                 for col_idx, c_name in enumerate(orig_cols, start=1):
                     val = row_data.get(c_name, "") if isinstance(row_data, pd.Series) else ""
                     c = ws.cell(row=row_counter, column=col_idx, value=str(val))
                     c.font = regular_font
                     c.border = thin_border
                     
-                # 2. Fill Governance Added Columns
                 gov_vals = [
                     issue['issue_type'],
                     issue['field_name'],
                     issue['original_value'],
                     issue['suggested_correction'],
-                    "", # Corrected Value
+                    "",
                     issue['priority'],
                     issue['responsible_dept'],
-                    "Pending", # Default Correction Status
-                    "", # Corrected By
-                    "", # Correction Reason
-                    ""  # Remarks
+                    "Pending",
+                    "",
+                    "",
+                    ""
                 ]
                 
                 for g_offset, g_val in enumerate(gov_vals):
@@ -335,8 +314,7 @@ def generate_excel_workbook(
                     c.font = regular_font
                     c.border = thin_border
                     
-                    # Format Priority
-                    if g_offset == 5: # Priority column
+                    if g_offset == 5:
                         if g_val == 'Critical':
                             c.fill = red_fill
                             c.font = red_font
@@ -347,20 +325,18 @@ def generate_excel_workbook(
                             c.fill = yellow_fill
                             c.font = yellow_font
                             
-                    # Format Correction Status
-                    if g_offset == 7: # Correction Status column
+                    if g_offset == 7:
                         c.fill = grey_fill
                         c.font = grey_font
                         dv_status.add(c)
                         
                 row_counter += 1
             
-        # Freeze panes below headers
         ws.freeze_panes = 'A4'
         ws.auto_filter.ref = f"A3:{get_column_letter(len(all_headers))}{row_counter-1}"
 
     # -------------------------------------------------------------
-    # SHEET 10: CORRECTION PRIORITIES
+    # SHEET 11: CORRECTION PRIORITIES
     # -------------------------------------------------------------
     ws_cp = wb.create_sheet(title="Correction Priorities")
     ws_cp.views.sheetView[0].showGridLines = True
@@ -395,7 +371,7 @@ def generate_excel_workbook(
     ws_cp.freeze_panes = 'A4'
 
     # -------------------------------------------------------------
-    # SHEET 11: SANITIZATION RULES
+    # SHEET 12: SANITIZATION RULES
     # -------------------------------------------------------------
     ws_rules = wb.create_sheet(title="Sanitization Rules")
     ws_rules.views.sheetView[0].showGridLines = True
@@ -411,11 +387,13 @@ def generate_excel_workbook(
         ("RULE-01", "Universal", "Primary Key Uniqueness", "Primary Code / ID", "100% Unique Required", "Must not automerge without ID verification"),
         ("RULE-02", "Universal", "Exact Duplicate Row Check", "All Record Columns", "Identical Tuple Check", "Flag identical redundant rows for deletion"),
         ("RULE-03", "Universal", "Whitespace Cleaning", "All String Fields", "Trim leading/trailing/multiple spaces", "Auto-trim formatting whitespace"),
-        ("RULE-04", "Pharmacy", "Generic Salt Mapping", "Drug Name, Generic Code", "Must link to valid generic salt", "Department Validation Required"),
-        ("RULE-05", "Pharmacy", "Drug Schedule Validation", "Schedule Type", "OTC, Schedule H, H1, X, Narcotic", "Department Validation Required"),
-        ("RULE-06", "Doctors", "Medical Registration Audit", "Registration No, Council", "Valid Council No & Name match", "Department Validation Required"),
-        ("RULE-07", "Laboratory", "Specimen & Reference Range", "Specimen, Unit, TAT", "NABL Accredited specimen mapping", "Department Validation Required"),
-        ("RULE-08", "Tariffs", "Payer Package Mapping", "Service Code, Tariff Price", "Non-zero price & active billing code", "Department Validation Required")
+        ("RULE-04", "Universal", "Casing & Title Standardisation", "Name & Description Fields", "Standardize ALL CAPS / lowercase to Title Case", "Flag casing inconsistencies for rectification"),
+        ("RULE-05", "Universal", "Login ID Format Audit", "Login ID, User Name", "Lowercase alphanumeric without spaces/symbols", "Flag non-standard login identifiers"),
+        ("RULE-06", "Pharmacy", "Generic Salt Mapping", "Drug Name, Generic Code", "Must link to valid generic salt", "Department Validation Required"),
+        ("RULE-07", "Pharmacy", "Drug Schedule Validation", "Schedule Type", "OTC, Schedule H, H1, X, Narcotic", "Department Validation Required"),
+        ("RULE-08", "Doctors", "Medical Registration Audit", "Registration No, Council", "Valid Council No & Name match", "Department Validation Required"),
+        ("RULE-09", "Laboratory", "Specimen & Reference Range", "Specimen, Unit, TAT", "NABL Accredited specimen mapping", "Department Validation Required"),
+        ("RULE-10", "Tariffs", "Payer Package Mapping", "Service Code, Tariff Price", "Non-zero price & active billing code", "Department Validation Required")
     ]
     
     for r_idx, r_data in enumerate(rule_rows, start=4):
@@ -429,7 +407,6 @@ def generate_excel_workbook(
                 
     ws_rules.freeze_panes = 'A4'
 
-    # Auto-adjust Column Widths Across All Sheets
     for sheet in wb.worksheets:
         for col in sheet.columns:
             max_len = 0
