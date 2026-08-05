@@ -5,6 +5,59 @@ from openpyxl.utils import get_column_letter
 import pandas as pd
 from datetime import datetime
 
+def deduplicate_issues_by_row(issues: list[dict]) -> list[dict]:
+    """
+    Deduplicates issue records by row_index so that each source record
+    appears EXACTLY ONCE per sheet, combining multiple issue flags with semicolons.
+    """
+    grouped = {}
+    prio_map = {'Critical': 1, 'High': 2, 'Medium': 3, 'Low': 4}
+    
+    for issue in issues:
+        r_idx = issue['row_index']
+        if r_idx not in grouped:
+            grouped[r_idx] = {
+                'row_index': r_idx,
+                'issue_types': [issue['issue_type']],
+                'field_names': [issue['field_name']] if issue['field_name'] else [],
+                'original_values': [str(issue['original_value'])] if str(issue['original_value']) else [],
+                'suggested_corrections': [issue['suggested_correction']],
+                'priorities': [issue['priority']],
+                'responsible_depts': [issue['responsible_dept']],
+                'category': issue['category']
+            }
+        else:
+            if issue['issue_type'] not in grouped[r_idx]['issue_types']:
+                grouped[r_idx]['issue_types'].append(issue['issue_type'])
+            if issue['field_name'] and issue['field_name'] not in grouped[r_idx]['field_names']:
+                grouped[r_idx]['field_names'].append(issue['field_name'])
+            if str(issue['original_value']) and str(issue['original_value']) not in grouped[r_idx]['original_values']:
+                grouped[r_idx]['original_values'].append(str(issue['original_value']))
+            if issue['suggested_correction'] not in grouped[r_idx]['suggested_corrections']:
+                grouped[r_idx]['suggested_corrections'].append(issue['suggested_correction'])
+            if issue['priority'] not in grouped[r_idx]['priorities']:
+                grouped[r_idx]['priorities'].append(issue['priority'])
+            if issue['responsible_dept'] not in grouped[r_idx]['responsible_depts']:
+                grouped[r_idx]['responsible_depts'].append(issue['responsible_dept'])
+
+    deduped = []
+    for r_idx in sorted(grouped.keys()):
+        item = grouped[r_idx]
+        sorted_prios = sorted(item['priorities'], key=lambda p: prio_map.get(p, 5))
+        top_prio = sorted_prios[0] if sorted_prios else 'Medium'
+        
+        deduped.append({
+            'row_index': r_idx,
+            'issue_type': '; '.join(item['issue_types']),
+            'field_name': '; '.join(item['field_names']),
+            'original_value': '; '.join(item['original_values']),
+            'suggested_correction': '; '.join(item['suggested_corrections']),
+            'priority': top_prio,
+            'responsible_dept': '; '.join(item['responsible_depts']),
+            'category': item['category']
+        })
+    return deduped
+
 def generate_excel_workbook(
     df: pd.DataFrame,
     analysis_results: dict,
@@ -224,13 +277,13 @@ def generate_excel_workbook(
     
     sheet_definitions = [
         ("All Issues", all_issues_list),
-        ("Affected Records", all_issues_list),
-        ("Duplicate Records", [i for i in all_issues_list if i['category'] == 'Duplicate Records']),
-        ("Missing Fields", [i for i in all_issues_list if i['category'] == 'Missing Fields']),
-        ("Invalid Values", [i for i in all_issues_list if i['category'] == 'Invalid Values']),
-        ("Spelling and Standardisation", [i for i in all_issues_list if i['category'] == 'Spelling and Standardisation']),
-        ("Casing and Formatting", [i for i in all_issues_list if i['category'] == 'Casing and Formatting']),
-        ("Department-Specific Review", [i for i in all_issues_list if i['category'] == 'Department-Specific Review']),
+        ("Affected Records", deduplicate_issues_by_row(all_issues_list)),
+        ("Duplicate Records", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Duplicate Records'])),
+        ("Missing Fields", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Missing Fields'])),
+        ("Invalid Values", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Invalid Values'])),
+        ("Spelling and Standardisation", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Spelling and Standardisation'])),
+        ("Casing and Formatting", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Casing and Formatting'])),
+        ("Department-Specific Review", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Department-Specific Review'])),
     ]
 
     for sheet_name, issues_subset in sheet_definitions:
@@ -282,7 +335,7 @@ def generate_excel_workbook(
                     dv_status.add(c)
             row_counter = 5
         else:
-            # Build Data Rows for Issues Found in this specific category
+            # Build Data Rows for Issues Found in this specific category (Deduplicated per source row)
             for issue in issues_subset:
                 orig_row_idx = issue['row_index'] - 1
                 row_data = df.iloc[orig_row_idx] if orig_row_idx < len(df) else {}
