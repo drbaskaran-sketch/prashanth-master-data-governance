@@ -201,14 +201,17 @@ def generate_excel_workbook(
     # Data Validation Dropdown for Correction Status
     dv_status = DataValidation(type="list", formula1='"Pending,Corrected,No Change Required,Needs Clarification"', allow_blank=True)
     
+    # Affected Records includes ALL issues across all categories
+    all_issues_list = analysis_results['all_issues']
+    
     sheet_definitions = [
-        ("All Issues", analysis_results['all_issues']),
-        ("Affected Records", [i for i in analysis_results['all_issues'] if i['category'] in ['Duplicate Records', 'Missing Fields', 'Invalid Values']]),
-        ("Duplicate Records", [i for i in analysis_results['all_issues'] if i['category'] == 'Duplicate Records']),
-        ("Missing Fields", [i for i in analysis_results['all_issues'] if i['category'] == 'Missing Fields']),
-        ("Invalid Values", [i for i in analysis_results['all_issues'] if i['category'] == 'Invalid Values']),
-        ("Spelling and Standardisation", [i for i in analysis_results['all_issues'] if i['category'] == 'Spelling and Standardisation']),
-        ("Department-Specific Review", [i for i in analysis_results['all_issues'] if i['category'] == 'Department-Specific Review']),
+        ("All Issues", all_issues_list),
+        ("Affected Records", all_issues_list), # Full list of all affected record issues
+        ("Duplicate Records", [i for i in all_issues_list if i['category'] == 'Duplicate Records']),
+        ("Missing Fields", [i for i in all_issues_list if i['category'] == 'Missing Fields']),
+        ("Invalid Values", [i for i in all_issues_list if i['category'] == 'Invalid Values']),
+        ("Spelling and Standardisation", [i for i in all_issues_list if i['category'] == 'Spelling and Standardisation']),
+        ("Department-Specific Review", [i for i in all_issues_list if i['category'] == 'Department-Specific Review']),
     ]
 
     for sheet_name, issues_subset in sheet_definitions:
@@ -224,70 +227,102 @@ def generate_excel_workbook(
         for col_idx, h in enumerate(all_headers, start=1):
             c = ws.cell(row=3, column=col_idx, value=h)
             c.font = header_font
-            # Highlight original columns in Navy, Governance in Teal
             c.fill = navy_header_fill if col_idx <= len(orig_cols) else teal_header_fill
             c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             
         ws.row_dimensions[3].height = 28
         
-        # Build Rows
         row_counter = 4
-        for issue in issues_subset:
-            orig_row_idx = issue['row_index'] - 1
-            row_data = df.iloc[orig_row_idx] if orig_row_idx < len(df) else {}
-            
-            # 1. Fill Original Source Columns
-            for col_idx, c_name in enumerate(orig_cols, start=1):
-                val = row_data.get(c_name, "") if isinstance(row_data, pd.Series) else ""
-                c = ws.cell(row=row_counter, column=col_idx, value=str(val))
+        
+        # If issues_subset is empty, add an explicit "No Issues Found" row so sheet is never confusingly blank
+        if not issues_subset:
+            # Source columns blank/N/A
+            for col_idx in range(1, len(orig_cols) + 1):
+                c = ws.cell(row=4, column=col_idx, value="N/A")
                 c.font = regular_font
                 c.border = thin_border
                 
-            # 2. Fill Governance Added Columns
-            gov_vals = [
-                issue['issue_type'],
-                issue['field_name'],
-                issue['original_value'],
-                issue['suggested_correction'],
+            no_issue_vals = [
+                "No Issues Found",
+                "ALL_FIELDS",
+                "Compliant",
+                "No action required - 100% compliant in this check category.",
                 "", # Corrected Value
-                issue['priority'],
-                issue['responsible_dept'],
-                "Pending", # Default Correction Status
-                "", # Corrected By
-                "", # Correction Reason
-                ""  # Remarks
+                "Low",
+                master_type,
+                "No Change Required",
+                "System Validator",
+                "Verified Clean",
+                "All records pass validation for this check"
             ]
             
-            for g_offset, g_val in enumerate(gov_vals):
+            for g_offset, g_val in enumerate(no_issue_vals):
                 c_col = len(orig_cols) + 1 + g_offset
-                c = ws.cell(row=row_counter, column=c_col, value=g_val)
+                c = ws.cell(row=4, column=c_col, value=g_val)
                 c.font = regular_font
                 c.border = thin_border
-                
-                # Format Priority
-                if g_offset == 5: # Priority column
-                    if g_val == 'Critical':
-                        c.fill = red_fill
-                        c.font = red_font
-                    elif g_val == 'High':
-                        c.fill = amber_fill
-                        c.font = amber_font
-                    elif g_val == 'Medium':
-                        c.fill = yellow_fill
-                        c.font = yellow_font
-                        
-                # Format Correction Status
-                if g_offset == 7: # Correction Status column
-                    c.fill = grey_fill
-                    c.font = grey_font
+                if g_offset == 7: # Status
+                    c.fill = green_fill
+                    c.font = green_font
                     dv_status.add(c)
+            row_counter = 5
+        else:
+            # Build Data Rows
+            for issue in issues_subset:
+                orig_row_idx = issue['row_index'] - 1
+                row_data = df.iloc[orig_row_idx] if orig_row_idx < len(df) else {}
+                
+                # 1. Fill Original Source Columns
+                for col_idx, c_name in enumerate(orig_cols, start=1):
+                    val = row_data.get(c_name, "") if isinstance(row_data, pd.Series) else ""
+                    c = ws.cell(row=row_counter, column=col_idx, value=str(val))
+                    c.font = regular_font
+                    c.border = thin_border
                     
-            row_counter += 1
+                # 2. Fill Governance Added Columns
+                gov_vals = [
+                    issue['issue_type'],
+                    issue['field_name'],
+                    issue['original_value'],
+                    issue['suggested_correction'],
+                    "", # Corrected Value
+                    issue['priority'],
+                    issue['responsible_dept'],
+                    "Pending", # Default Correction Status
+                    "", # Corrected By
+                    "", # Correction Reason
+                    ""  # Remarks
+                ]
+                
+                for g_offset, g_val in enumerate(gov_vals):
+                    c_col = len(orig_cols) + 1 + g_offset
+                    c = ws.cell(row=row_counter, column=c_col, value=g_val)
+                    c.font = regular_font
+                    c.border = thin_border
+                    
+                    # Format Priority
+                    if g_offset == 5: # Priority column
+                        if g_val == 'Critical':
+                            c.fill = red_fill
+                            c.font = red_font
+                        elif g_val == 'High':
+                            c.fill = amber_fill
+                            c.font = amber_font
+                        elif g_val == 'Medium':
+                            c.fill = yellow_fill
+                            c.font = yellow_font
+                            
+                    # Format Correction Status
+                    if g_offset == 7: # Correction Status column
+                        c.fill = grey_fill
+                        c.font = grey_font
+                        dv_status.add(c)
+                        
+                row_counter += 1
             
         # Freeze panes below headers
         ws.freeze_panes = 'A4'
-        if row_counter > 4:
-            ws.auto_filter.ref = f"A3:{get_column_letter(len(all_headers))}{row_counter-1}"
+        ws.auto_filter.ref = f"A3:{get_column_letter(len(all_headers))}{row_counter-1}"
 
     # -------------------------------------------------------------
     # SHEET 9: CORRECTION PRIORITIES
