@@ -67,8 +67,7 @@ assert r_excel.status_code == 200, f"Excel download failed: {r_excel.status_code
 wb = openpyxl.load_workbook(io.BytesIO(r_excel.content))
 expected_sheets = [
     'Executive Summary', 'Original Master Data', 'All Issues', 'Affected Records',
-    'Duplicate Records', 'Missing Fields', 'Invalid Values', 'Spelling and Standardisation',
-    'Casing and Formatting', 'Department-Specific Review',
+    'Invalid Values', 'Spelling and Standardisation', 'Casing and Formatting',
     'Correction Priorities', 'Sanitization Rules'
 ]
 

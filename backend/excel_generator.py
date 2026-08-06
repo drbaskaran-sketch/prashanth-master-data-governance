@@ -201,30 +201,47 @@ def generate_excel_workbook(
             c1.fill = amber_fill if cat != "Critical Priority Issues" else red_fill
             c2.fill = amber_fill if cat != "Critical Priority Issues" else red_fill
 
+    all_issues_list = analysis_results['all_issues']
+
+    category_subsets = [
+        ("Duplicate Records", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Duplicate Records']), "duplicate key and repeated row findings"),
+        ("Missing Fields", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Missing Fields'], df, id_col), "missing mandatory values sheet"),
+        ("Invalid Values", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Invalid Values'], df, id_col), "invalid status and formatting errors"),
+        ("Spelling and Standardisation", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Spelling and Standardisation'], df, id_col), "whitespace, typos, and spelling standardisation findings"),
+        ("Casing and Formatting", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Casing and Formatting'], df, id_col), "name casing, digits in names, and login ID formatting findings"),
+        ("Department-Specific Review", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Department-Specific Review'], df, id_col), "clinical / drug / tariff safety warnings")
+    ]
+
     ws_exec.cell(row=28, column=1, value="Quick Sheet Navigation Links").font = section_font
     nav_links = [
-        ("View Original Master Data", "'Original Master Data'!A1", "Go to 100% complete raw uploaded source dataset"),
-        ("View Affected Records", "'Affected Records'!A1", "Go to list of unique records requiring sanitization"),
-        ("View Duplicate Records", "'Duplicate Records'!A1", "Go to duplicate key and repeated row findings"),
-        ("View Missing Fields", "'Missing Fields'!A1", "Go to missing mandatory values sheet"),
-        ("View Invalid Values", "'Invalid Values'!A1", "Go to invalid status and formatting errors"),
-        ("View Casing and Formatting", "'Casing and Formatting'!A1", "Go to name casing, digits in names, and login ID formatting findings"),
-        ("View Critical Issues", "'All Issues'!A1", "Go to master issues log containing all flags"),
-        ("View Department-Specific Review", "'Department-Specific Review'!A1", "Go to clinical / drug / tariff safety warnings")
+        ("View Original Master Data", "'Original Master Data'!A1", "Go to 100% complete raw uploaded source dataset", True),
+        ("View Affected Records", "'Affected Records'!A1", "Go to list of unique records requiring sanitization", True),
+        ("View Critical Issues", "'All Issues'!A1", "Go to master issues log containing all flags", True),
     ]
     
+    for cat_name, issues_sub, purp in category_subsets:
+        if len(issues_sub) > 0:
+            nav_links.append((f"View {cat_name}", f"'{cat_name}'!A1", f"Go to {purp} ({len(issues_sub)} affected records)", True))
+        else:
+            nav_links.append((f"View {cat_name}", None, f"100% Compliant — 0 issues detected ({cat_name} sheet omitted)", False))
+
     for c_idx, h in enumerate(["Target Sheet", "Hyperlink Action", "Sheet Purpose"], start=1):
         c = ws_exec.cell(row=29, column=c_idx, value=h)
         c.font = header_font
         c.fill = teal_header_fill
         
-    for r_idx, (label, target, purp) in enumerate(nav_links, start=30):
+    for r_idx, (label, target, purp, has_link) in enumerate(nav_links, start=30):
         c1 = ws_exec.cell(row=r_idx, column=1, value=label)
-        c2 = ws_exec.cell(row=r_idx, column=2, value=f"=HYPERLINK(\"#{target}\", \"Open Sheet ->\")")
+        if has_link and target:
+            c2 = ws_exec.cell(row=r_idx, column=2, value=f"=HYPERLINK(\"#{target}\", \"Open Sheet ->\")")
+            c2.font = link_font
+        else:
+            c2 = ws_exec.cell(row=r_idx, column=2, value="Compliant (0 Issues)")
+            c2.font = grey_font
+            
         c3 = ws_exec.cell(row=r_idx, column=3, value=purp)
         
         c1.font = bold_font
-        c2.font = link_font
         c3.font = regular_font
         
         c1.border = thin_border
@@ -290,7 +307,7 @@ def generate_excel_workbook(
     ws_orig.auto_filter.ref = f"A3:{get_column_letter(len(orig_headers))}{len(df)+3}"
 
     # -------------------------------------------------------------
-    # CORRECTION SHEETS (3 TO 10)
+    # CORRECTION SHEETS (DYNAMIC CATEGORY SHEETS)
     # -------------------------------------------------------------
     governance_headers = [
         "Issue Type", "Field Name", "Original Value", "Suggested Correction/Action",
@@ -301,18 +318,13 @@ def generate_excel_workbook(
     all_headers = orig_cols + governance_headers
     dv_status = DataValidation(type="list", formula1='"Pending,Corrected,No Change Required,Needs Clarification"', allow_blank=True)
     
-    all_issues_list = analysis_results['all_issues']
-    
     sheet_definitions = [
         ("All Issues", deduplicate_category_issues_distinctly(all_issues_list, df, id_col)),
         ("Affected Records", deduplicate_category_issues_distinctly(all_issues_list, df, id_col)),
-        ("Duplicate Records", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Duplicate Records'])),
-        ("Missing Fields", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Missing Fields'], df, id_col)),
-        ("Invalid Values", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Invalid Values'], df, id_col)),
-        ("Spelling and Standardisation", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Spelling and Standardisation'], df, id_col)),
-        ("Casing and Formatting", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Casing and Formatting'], df, id_col)),
-        ("Department-Specific Review", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Department-Specific Review'], df, id_col)),
     ]
+    for cat_name, issues_sub, _ in category_subsets:
+        if len(issues_sub) > 0:
+            sheet_definitions.append((cat_name, issues_sub))
 
     for sheet_name, issues_subset in sheet_definitions:
         ws = wb.create_sheet(title=sheet_name)
