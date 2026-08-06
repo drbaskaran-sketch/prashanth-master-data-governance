@@ -58,6 +58,32 @@ def deduplicate_issues_by_row(issues: list[dict]) -> list[dict]:
         })
     return deduped
 
+def deduplicate_category_issues_distinctly(issues: list[dict], df: pd.DataFrame, id_col: str) -> list[dict]:
+    """
+    Filters out redundant duplicate rows and deduplicates category warnings by (primary_key, issue_type, field_name)
+    so that duplicate rows in the input file do not repeat identical warnings in non-duplicate sheets.
+    """
+    seen_keys = set()
+    filtered = []
+    
+    for issue in issues:
+        # Skip exact duplicate row flags in category sheets (handled in Duplicate Records sheet)
+        if issue['issue_type'] == 'Exact Duplicate Row':
+            continue
+            
+        orig_row_idx = issue['row_index'] - 1
+        pk_val = ""
+        if id_col and orig_row_idx < len(df) and id_col in df.columns:
+            pk_val = str(df.iloc[orig_row_idx][id_col]).strip()
+            
+        dedup_key = (pk_val or orig_row_idx, issue['category'], issue['issue_type'], issue['field_name'], str(issue['original_value']).strip())
+        
+        if dedup_key not in seen_keys:
+            seen_keys.add(dedup_key)
+            filtered.append(issue)
+            
+    return deduplicate_issues_by_row(filtered)
+
 def generate_excel_workbook(
     df: pd.DataFrame,
     analysis_results: dict,
@@ -105,6 +131,8 @@ def generate_excel_workbook(
         top=Side(style='thin', color='D9D9D9'),
         bottom=Side(style='thin', color='D9D9D9')
     )
+
+    id_col = analysis_results.get('id_column', '')
 
     # -------------------------------------------------------------
     # SHEET 1: EXECUTIVE SUMMARY
@@ -276,14 +304,14 @@ def generate_excel_workbook(
     all_issues_list = analysis_results['all_issues']
     
     sheet_definitions = [
-        ("All Issues", all_issues_list),
-        ("Affected Records", deduplicate_issues_by_row(all_issues_list)),
+        ("All Issues", deduplicate_category_issues_distinctly(all_issues_list, df, id_col)),
+        ("Affected Records", deduplicate_category_issues_distinctly(all_issues_list, df, id_col)),
         ("Duplicate Records", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Duplicate Records'])),
-        ("Missing Fields", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Missing Fields'])),
-        ("Invalid Values", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Invalid Values'])),
-        ("Spelling and Standardisation", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Spelling and Standardisation'])),
-        ("Casing and Formatting", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Casing and Formatting'])),
-        ("Department-Specific Review", deduplicate_issues_by_row([i for i in all_issues_list if i['category'] == 'Department-Specific Review'])),
+        ("Missing Fields", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Missing Fields'], df, id_col)),
+        ("Invalid Values", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Invalid Values'], df, id_col)),
+        ("Spelling and Standardisation", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Spelling and Standardisation'], df, id_col)),
+        ("Casing and Formatting", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Casing and Formatting'], df, id_col)),
+        ("Department-Specific Review", deduplicate_category_issues_distinctly([i for i in all_issues_list if i['category'] == 'Department-Specific Review'], df, id_col)),
     ]
 
     for sheet_name, issues_subset in sheet_definitions:

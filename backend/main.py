@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from database import init_db, save_analysis_record, get_analysis_record
 from parser import parse_file
 from analyzer import analyze_dataset
-from excel_generator import generate_excel_workbook
+from excel_generator import generate_excel_workbook, deduplicate_category_issues_distinctly
 
 app = FastAPI(
     title="Prashanth Hospital Master File Analyzer API",
@@ -79,7 +79,8 @@ async def analyze_file(
         # 4. Generate All Issues CSV
         csv_filename = f"{record_id}_All_Issues.csv"
         csv_path = os.path.join(WORKBOOK_DIR, csv_filename)
-        df_issues = pd.DataFrame(analysis_results['all_issues'])
+        deduped_csv_issues = deduplicate_category_issues_distinctly(analysis_results['all_issues'], df, analysis_results.get('id_column', ''))
+        df_issues = pd.DataFrame(deduped_csv_issues)
         if not df_issues.empty:
             df_issues.to_csv(csv_path, index=False)
         else:
