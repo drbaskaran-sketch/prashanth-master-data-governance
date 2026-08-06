@@ -1,0 +1,5 @@
+store_code,item_name,category,hsn_code,status
+STR-001, Surgical Gloves Sterile ,Surgical,3004,ACTIVE
+STR-001, Surgical Gloves Sterile ,Surgical,3004,ACTIVE
+STR-002,  ,Surgical,INVALID_HSN,ACTIVE
+STR-003,Syringe 5ml,,3004,UNKNOWN_STATUS

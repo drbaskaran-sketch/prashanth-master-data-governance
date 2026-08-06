@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     port: 3001,
     host: '0.0.0.0',
+    allowedHosts: true,
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
     },
@@ -19,6 +20,7 @@ export default defineConfig({
   preview: {
     port: 3001,
     host: '0.0.0.0',
+    allowedHosts: true,
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
     },

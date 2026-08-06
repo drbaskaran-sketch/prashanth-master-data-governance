@@ -135,7 +135,14 @@ export default function App() {
         body: formData
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const textError = await response.text();
+        throw new Error(`Server returned an error (${response.status}): ${textError.replace(/<[^>]*>?/gm, '').substring(0, 150)}`);
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.detail || data.error || 'Failed to analyze file.');
